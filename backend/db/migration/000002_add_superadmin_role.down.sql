@@ -1,0 +1,3 @@
+-- Menghapus nilai dari ENUM adalah operasi yang destruktif dan tidak didukung secara langsung.
+-- Migrasi 'down' ini sengaja dibiarkan kosong untuk keamanan data.
+-- Pembalikan manual akan memerlukan pembuatan ulang tipe ENUM dan migrasi data.

@@ -1,0 +1,135 @@
+{
+  "description": "Skema database untuk SAGE (Smart Automated Grading Engine), diimpor dari database.txt.",
+  "tables": [
+    {
+      "name": "users",
+      "description": "Data Induk Pengguna",
+      "columns": [
+        { "name": "id", "type": "UUID", "is_primary_key": true },
+        { "name": "nama_lengkap", "type": "VARCHAR(255)", "is_nullable": false },
+        { "name": "email", "type": "VARCHAR(255)", "is_unique": true, "is_nullable": false },
+        { "name": "password", "type": "VARCHAR(255)", "is_nullable": false, "comment": "Hashed password" },
+        { "name": "peran", "type": "ENUM('teacher', 'student')", "is_nullable": false },
+        { "name": "nomor_identitas", "type": "VARCHAR(50)", "is_nullable": true, "comment": "NIP/NIS" },
+        { "name": "created_at", "type": "TIMESTAMP WITH TIME ZONE", "default": "NOW()" }
+      ]
+    },
+    {
+      "name": "classes",
+      "description": "Manajemen Ruang Kelas",
+      "columns": [
+        { "name": "id", "type": "UUID", "is_primary_key": true },
+        { "name": "guru_id", "type": "UUID", "is_nullable": false },
+        { "name": "nama_kelas", "type": "VARCHAR(255)", "is_nullable": false },
+        { "name": "deskripsi", "type": "TEXT", "is_nullable": true },
+        { "name": "created_at", "type": "TIMESTAMP WITH TIME ZONE", "default": "NOW()" }
+      ],
+      "relations": [
+        { "from_column": "guru_id", "to_table": "users", "to_column": "id", "on_delete": "CASCADE" }
+      ]
+    },
+    {
+      "name": "class_members",
+      "description": "Relasi Pendaftaran Siswa di Kelas",
+      "columns": [
+        { "name": "id", "type": "UUID", "is_primary_key": true },
+        { "name": "kelas_id", "type": "UUID", "is_nullable": false },
+        { "name": "siswa_id", "type": "UUID", "is_nullable": false },
+        { "name": "joined_at", "type": "TIMESTAMP WITH TIME ZONE", "default": "NOW()" }
+      ],
+      "relations": [
+        { "from_column": "kelas_id", "to_table": "classes", "to_column": "id", "on_delete": "CASCADE" },
+        { "from_column": "siswa_id", "to_table": "users", "to_column": "id", "on_delete": "CASCADE" }
+      ]
+    },
+    {
+      "name": "materials",
+      "description": "Basis Pengetahuan untuk proses RAG",
+      "columns": [
+        { "name": "id", "type": "UUID", "is_primary_key": true },
+        { "name": "kelas_id", "type": "UUID", "is_nullable": false },
+        { "name": "pengunggah_id", "type": "UUID", "is_nullable": false },
+        { "name": "judul", "type": "VARCHAR(255)", "is_nullable": false },
+        { "name": "isi_materi", "type": "TEXT", "is_nullable": true, "comment": "Konten teks untuk embedding AI" },
+        { "name": "file_url", "type": "TEXT", "is_nullable": true, "comment": "Link PDF/Dokumen asli" },
+        { "name": "created_at", "type": "TIMESTAMP WITH TIME ZONE", "default": "NOW()" }
+      ],
+      "relations": [
+        { "from_column": "kelas_id", "to_table": "classes", "to_column": "id", "on_delete": "CASCADE" },
+        { "from_column": "pengunggah_id", "to_table": "users", "to_column": "id", "on_delete": "SET NULL" }
+      ]
+    },
+    {
+      "name": "essay_questions",
+      "description": "Bank Soal Esai",
+      "columns": [
+        { "name": "id", "type": "UUID", "is_primary_key": true },
+        { "name": "materi_id", "type": "UUID", "is_nullable": false },
+        { "name": "teks_soal", "type": "TEXT", "is_nullable": false },
+        { "name": "level_kognitif", "type": "ENUM('C1', 'C2', 'C3', 'C4')", "is_nullable": true },
+        { "name": "kunci_jawaban", "type": "TEXT", "is_nullable": true, "comment": "Referensi utama RAG" }
+      ],
+      "relations": [
+        { "from_column": "materi_id", "to_table": "materials", "to_column": "id", "on_delete": "CASCADE" }
+      ]
+    },
+    {
+      "name": "rubrics",
+      "description": "Kriteria Penilaian Analitik",
+      "columns": [
+        { "name": "id", "type": "UUID", "is_primary_key": true },
+        { "name": "soal_id", "type": "UUID", "is_nullable": false },
+        { "name": "nama_aspek", "type": "VARCHAR(255)", "is_nullable": false, "comment": "Contoh: Relevansi, Argumen" },
+        { "name": "deskripsi", "type": "TEXT", "is_nullable": true },
+        { "name": "bobot", "type": "FLOAT", "is_nullable": true }
+      ],
+      "relations": [
+        { "from_column": "soal_id", "to_table": "essay_questions", "to_column": "id", "on_delete": "CASCADE" }
+      ]
+    },
+    {
+      "name": "essay_submissions",
+      "description": "Jawaban Esai dari Siswa",
+      "columns": [
+        { "name": "id", "type": "UUID", "is_primary_key": true },
+        { "name": "soal_id", "type": "UUID", "is_nullable": false },
+        { "name": "siswa_id", "type": "UUID", "is_nullable": false },
+        { "name": "teks_jawaban", "type": "TEXT", "is_nullable": false },
+        { "name": "submitted_at", "type": "TIMESTAMP WITH TIME ZONE", "default": "NOW()" }
+      ],
+      "relations": [
+        { "from_column": "soal_id", "to_table": "essay_questions", "to_column": "id", "on_delete": "CASCADE" },
+        { "from_column": "siswa_id", "to_table": "users", "to_column": "id", "on_delete": "CASCADE" }
+      ]
+    },
+    {
+      "name": "ai_results",
+      "description": "Hasil Penilaian dari Generasi AI (Gemini)",
+      "columns": [
+        { "name": "id", "type": "UUID", "is_primary_key": true },
+        { "name": "submission_id", "type": "UUID", "is_nullable": false, "is_unique": true },
+        { "name": "skor_ai", "type": "FLOAT", "is_nullable": true },
+        { "name": "umpan_balik_ai", "type": "TEXT", "is_nullable": true },
+        { "name": "logs_rag", "type": "TEXT", "is_nullable": true, "comment": "Konteks materi yang ditarik AI" },
+        { "name": "generated_at", "type": "TIMESTAMP WITH TIME ZONE", "default": "NOW()" }
+      ],
+      "relations": [
+        { "from_column": "submission_id", "to_table": "essay_submissions", "to_column": "id", "on_delete": "CASCADE" }
+      ]
+    },
+    {
+      "name": "teacher_reviews",
+      "description": "Validasi dan Penilaian Akhir dari Guru",
+      "columns": [
+        { "name": "id", "type": "UUID", "is_primary_key": true },
+        { "name": "submission_id", "type": "UUID", "is_nullable": false, "is_unique": true },
+        { "name": "skor_final", "type": "FLOAT", "is_nullable": false },
+        { "name": "catatan_guru", "type": "TEXT", "is_nullable": true },
+        { "name": "reviewed_at", "type": "TIMESTAMP WITH TIME ZONE", "default": "NOW()" }
+      ],
+      "relations": [
+        { "from_column": "submission_id", "to_table": "essay_submissions", "to_column": "id", "on_delete": "CASCADE" }
+      ]
+    }
+  ]
+}

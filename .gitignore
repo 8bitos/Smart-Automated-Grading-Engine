@@ -36,3 +36,8 @@ coverage/
 *.bak
 *.swp
 *~
+
+deskripsi aplikasi.txt
+database.json
+database.txt
+cmd.txt
