@@ -25,7 +25,7 @@ const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -42,13 +42,13 @@ export default function LoginPage() {
       const res = await fetch('http://localhost:8080/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Email atau password salah.');
+        throw new Error(data.message || 'Email/Username atau password salah.');
       }
       
       // Gunakan fungsi login dari AuthContext
@@ -81,16 +81,16 @@ export default function LoginPage() {
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="email">
-              Email
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="identifier">
+              Email atau Username
             </label>
             <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              id="identifier"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
-              placeholder="anda@email.com"
+              placeholder="anda@email.com atau usernameanda"
               required
             />
           </div>

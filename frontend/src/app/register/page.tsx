@@ -24,6 +24,7 @@ const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function RegisterPage() {
   const [namaLengkap, setNamaLengkap] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -42,6 +43,7 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nama_lengkap: namaLengkap,
+          username,
           email,
           password,
           peran: 'student', // Peran otomatis diatur sebagai 'student'
@@ -90,6 +92,20 @@ export default function RegisterPage() {
               onChange={(e) => setNamaLengkap(e.target.value)}
               className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
               placeholder="Nama Anda"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="username">
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full rounded-lg border-gray-300 bg-gray-50 p-3 text-gray-800 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+              placeholder="username_unik"
               required
             />
           </div>

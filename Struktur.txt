@@ -1,67 +1,110 @@
-Struktur Proyek: Sistem Penilaian Esai Otomatis
+Struktur Proyek: Sistem Penilaian Esai Otomatis (SAGE)
+=====================================================
 
-File ini menjelaskan struktur direktori dan fungsi dari setiap komponen utama dalam proyek ini.
-
-=====================================
-# Direktori Utama (Root)
-=====================================
+File ini menjelaskan struktur direktori dan fungsi dari setiap komponen utama dalam proyek ini, termasuk semua file yang telah dibuat hingga saat ini.
 
 .
 ├── backend/
+│   ├── db/
+│   │   └── migration/
+│   │       ├── 000001_init_schema.up.sql
+│   │       ├── 000001_init_schema.down.sql
+│   │       ├── 000002_add_superadmin_role.up.sql
+│   │       ├── 000002_add_superadmin_role.down.sql
+│   │       ├── 000003_add_username_to_users.up.sql
+│   │       └── 000003_add_username_to_users.down.sql
+│   ├── go.mod
+│   ├── go.sum
+│   └── main.go
 ├── frontend/
+│   └── src/
+│       ├── app/
+│       │   ├── admin/
+│       │   │   └── teachers/
+│       │   │       └── page.tsx
+│       │   ├── login/
+│       │   │   └── page.tsx
+│       │   ├── register/
+│       │   │   └── page.tsx
+│       │   ├── globals.css
+│       │   ├── layout.tsx
+│       │   └── page.tsx
+│       ├── components/
+│       │   └── AdminRouteGuard.tsx
+│       └── contexts/
+│           └── AuthContext.tsx
 ├── .gitignore
 ├── docker-compose.yml
 ├── database.json
-├── database.txt           <- Deskripsi skema database asli (teks)
+├── database.txt
 └── Struktur.txt (File ini)
 
 ---
+### PENJELASAN DETAIL
+---
 
-### /backend/
-- **Fungsi:** Berisi kode untuk aplikasi backend yang dibuat menggunakan bahasa Go.
+## DIREKTORI /backend/
+
+### `main.go`
+- **Fungsi:** Aplikasi backend utama (server). Menangani semua logika API, koneksi database, dan routing.
 - **Isi Penting:**
-    - `main.go`: Titik masuk utama aplikasi backend. Saat ini berisi server web sederhana yang menyediakan endpoint `/api/hello`.
-    - `go.mod`: File definisi modul Go untuk manajemen dependensi.
-    - `db/`: Direktori yang khusus menangani operasi database, termasuk migrasi.
+  - **Koneksi Database:** Terhubung ke PostgreSQL saat startup.
+  - **Routing:** Menggunakan `gorilla/mux` untuk mendefinisikan rute publik (login, register) dan rute privat (admin).
+  - **Handlers:** Fungsi yang menangani request, seperti `loginHandler`, `registerHandler`, `createTeacherHandler`, `getTeachersHandler`, dan `deleteTeacherHandler`.
+  - **Middleware:** Logika perantara untuk keamanan. `jwtMiddleware` memvalidasi token, dan `adminRequired` memastikan hanya `superadmin` yang bisa mengakses rute admin.
 
----
+### `go.mod` / `go.sum`
+- **Fungsi:** Mengelola dependensi (library eksternal) untuk proyek Go, seperti driver database, router, dll.
 
-### /backend/db/migration/
-- **Fungsi:** Menyimpan file-file migrasi database yang digunakan untuk membuat dan mengelola perubahan skema database PostgreSQL secara terstruktur dan terverifikasi.
+### `/backend/db/migration/`
+- **Fungsi:** Folder ini berisi "jejak langkah" perubahan skema database. Sangat penting untuk menjaga konsistensi database di lingkungan yang berbeda.
 - **Isi Penting:**
-    - `000001_init_schema.up.sql`: Berisi perintah SQL (`CREATE TABLE`, `CREATE TYPE`, dll.) untuk membuat semua tabel, tipe data, dan relasi awal di database.
-    - `000001_init_schema.down.sql`: Berisi perintah SQL (`DROP TABLE`, `DROP TYPE`, dll.) untuk membatalkan (rollback) migrasi `up.sql` jika diperlukan.
-- **Cara Kerja Migrasi:** Dengan bantuan alat seperti `golang-migrate/migrate`, file-file ini dijalankan secara berurutan untuk memperbarui skema database. Setiap perubahan skema akan diwakili oleh sepasang file `up.sql` dan `down.sql` baru.
+  - `000001_init_schema.up.sql`: Membuat semua tabel awal (users, classes, dll).
+  - `000002_add_superadmin_role.up.sql`: Menambahkan peran 'superadmin' ke sistem.
+  - `000003_add_username_to_users.up.sql`: Menambahkan kolom 'username' yang unik ke tabel `users`.
+  - `*.down.sql`: Berisi perintah untuk membatalkan (rollback) perubahan dari file `up.sql` yang berpasangan.
 
 ---
+## DIREKTORI /frontend/
 
-### /frontend/
-- **Fungsi:** Berisi kode untuk aplikasi frontend yang dibuat menggunakan Next.js (React framework).
-- **Isi Penting:**
-    - `src/app/page.tsx`: Komponen halaman utama yang akan diakses pengguna. Saat ini, halaman ini mengambil dan menampilkan pesan dari backend.
-    - `package.json`: Mengelola semua dependensi (packages) JavaScript dan mendefinisikan skrip untuk menjalankan aplikasi (misalnya, `npm run dev`).
-    - `node_modules/`: Direktori tempat semua dependensi diinstal. (Folder ini diabaikan oleh Git).
+### `/frontend/src/app/`
+- **Fungsi:** Direktori utama untuk aplikasi frontend Next.js yang menggunakan App Router. Setiap folder di sini mewakili sebuah rute/URL.
+
+#### `/page.tsx` (Halaman Utama)
+- **Fungsi:** Halaman pertama yang dilihat pengguna. Menampilkan navigasi kondisional: `Login` & `Register` jika belum login, atau `Logout` & `Admin Dashboard` (jika perannya `superadmin`) jika sudah login.
+
+#### `/login/page.tsx` (Halaman Login)
+- **Fungsi:** Berisi form untuk login. Pengguna bisa masuk menggunakan email atau username.
+- **Fitur:** Tombol hide/show password, UI modern, dan terhubung ke `AuthContext`.
+
+#### `/register/page.tsx` (Halaman Registrasi)
+- **Fungsi:** Berisi form untuk registrasi pengguna baru.
+- **Logika:** Setiap pendaftaran dari sini akan otomatis mendapatkan peran 'student'. Membutuhkan input username unik selain email.
+
+#### `/admin/teachers/page.tsx` (Halaman Admin Guru)
+- **Fungsi:** Dashboard khusus untuk `superadmin` mengelola data guru.
+- **Fitur:** Menampilkan daftar guru, form untuk menambah guru baru, dan tombol untuk menghapus guru.
+- **Keamanan:** Dibungkus dan dilindungi oleh komponen `AdminRouteGuard`.
+
+### `/frontend/src/components/`
+
+#### `AdminRouteGuard.tsx`
+- **Fungsi:** Komponen "penjaga" yang membungkus halaman privat (seperti halaman admin). Ia memeriksa apakah pengguna yang sedang login adalah `superadmin`. Jika bukan, pengguna akan dialihkan ke halaman utama.
+
+### `/frontend/src/contexts/`
+
+#### `AuthContext.tsx`
+- **Fungsi:** Pusat data otentikasi global untuk aplikasi frontend. Menyimpan data pengguna yang sedang login (ID, peran) dan token JWT.
+- **Fitur:** Menyediakan `useAuth` hook yang bisa digunakan oleh komponen manapun untuk mengakses data login, atau fungsi `login()` dan `logout()`.
 
 ---
+## FILE-FILE DI ROOT PROYEK
 
-### .gitignore
-- **Fungsi:** File ini berisi daftar file dan folder yang harus diabaikan oleh Git. Ini mencegah file-file yang tidak perlu (seperti `node_modules`, file environment `.env`, atau file hasil kompilasi) masuk ke dalam repository GitHub.
+#### `docker-compose.yml`
+- **Fungsi:** Mengelola semua layanan pendukung (PostgreSQL, Redis, Elasticsearch) dalam container Docker, memastikan lingkungan pengembangan yang konsisten.
 
----
+#### `database.json` & `database.txt`
+- **Fungsi:** Berfungsi sebagai "blueprint" dan dokumentasi untuk skema database. `database.json` adalah versi terstruktur yang digunakan untuk membuat file migrasi SQL.
 
-### docker-compose.yml
-- **Fungsi:** File konfigurasi untuk Docker Compose. File ini mendefinisikan dan mengelola layanan-layanan pendukung yang dibutuhkan oleh aplikasi, yaitu:
-    - **postgres:** Database relasional untuk menyimpan data terstruktur.
-    - **redis:** In-memory cache untuk menyimpan data sementara dan mempercepat respon.
-    - **elasticsearch:** Vector database untuk fitur pencarian semantik (RAG).
-- **Cara Kerja:** Dengan satu perintah (`docker-compose up`), semua layanan ini akan berjalan secara otomatis di dalam container Docker yang terisolasi.
-
----
-
-### database.json
-- **Fungsi:** Berisi definisi skema database dalam format JSON yang mudah dibaca. File ini berfungsi sebagai "blueprint" atau dokumentasi formal untuk semua tabel, kolom, tipe data, dan relasi dalam database PostgreSQL kita, yang kemudian digunakan untuk membuat file migrasi SQL.
-
----
-
-### Struktur.txt
-- **Fungsi:** File ini (yang sedang Anda baca) memberikan penjelasan mengenai struktur proyek untuk referensi di masa depan.
+#### `.gitignore` & `Struktur.txt`
+- **Fungsi:** File utilitas untuk version control (Git) dan dokumentasi struktur proyek (file ini).

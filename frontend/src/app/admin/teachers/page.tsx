@@ -7,6 +7,7 @@ import AdminRouteGuard from '@/components/AdminRouteGuard';
 interface Teacher {
   id: string;
   nama_lengkap: string;
+  username: string;
   email: string;
 }
 
@@ -19,6 +20,7 @@ export default function AdminTeachersPage() {
   // State for Add Teacher Form
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTeacherName, setNewTeacherName] = useState('');
+  const [newTeacherUsername, setNewTeacherUsername] = useState('');
   const [newTeacherEmail, setNewTeacherEmail] = useState('');
   const [newTeacherPassword, setNewTeacherPassword] = useState('');
   const [addFormLoading, setAddFormLoading] = useState(false);
@@ -77,6 +79,7 @@ export default function AdminTeachersPage() {
         },
         body: JSON.stringify({
           nama_lengkap: newTeacherName,
+          username: newTeacherUsername,
           email: newTeacherEmail,
           password: newTeacherPassword,
         }),
@@ -90,6 +93,7 @@ export default function AdminTeachersPage() {
 
       alert('Guru berhasil ditambahkan!');
       setNewTeacherName('');
+      setNewTeacherUsername('');
       setNewTeacherEmail('');
       setNewTeacherPassword('');
       setShowAddForm(false);
@@ -173,6 +177,17 @@ export default function AdminTeachersPage() {
                     required
                   />
                 </div>
+                 <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="newTeacherUsername">Username</label>
+                  <input
+                    type="text"
+                    id="newTeacherUsername"
+                    value={newTeacherUsername}
+                    onChange={(e) => setNewTeacherUsername(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                    required
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="newTeacherEmail">Email</label>
                   <input
@@ -217,6 +232,7 @@ export default function AdminTeachersPage() {
                 <thead>
                   <tr className="bg-gray-200 dark:bg-gray-700">
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Nama Lengkap</th>
+                    <th className="py-3 px-4 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Username</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Email</th>
                     <th className="py-3 px-4 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Aksi</th>
                   </tr>
@@ -226,6 +242,7 @@ export default function AdminTeachersPage() {
                     teachers.map((teacher) => (
                       <tr key={teacher.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="py-3 px-4">{teacher.nama_lengkap}</td>
+                        <td className="py-3 px-4">{teacher.username}</td>
                         <td className="py-3 px-4">{teacher.email}</td>
                         <td className="py-3 px-4">
                           <button
@@ -239,7 +256,7 @@ export default function AdminTeachersPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={3} className="py-3 px-4 text-center text-gray-500 dark:text-gray-400">Belum ada guru.</td>
+                      <td colSpan={4} className="py-3 px-4 text-center text-gray-500 dark:text-gray-400">Belum ada guru.</td>
                     </tr>
                   )}
                 </tbody>
