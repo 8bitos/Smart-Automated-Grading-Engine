@@ -1,0 +1,120 @@
+ deskripsi teknis sistem Anda yang disusun secara terstruktur untuk dokumentasi proyek (seperti file `gemini.md`).  mencakup alur kerja, koneksi antar-teknologi, dan  yang telah Anda lakukan.
+
+
+
+# Proyek: Sistem Penilaian Esai Otomatis berbasis RAG
+
+Sistem ini dikembangkan untuk mengotomatisasi evaluasi jawaban esai siswa secara objektif dan efisien dengan memanfaatkan teknologi **Retrieval-Augmented Generation (RAG)**. Sistem ini berfokus pada mata pelajaran tekstual seperti Sejarah, dengan membatasi penilaian pada level kognitif **C1 hingga C4**.
+
+## 1. Arsitektur dan Koneksi Teknologi
+
+Sistem Anda menggunakan arsitektur modern yang memisahkan tanggung jawab antara antarmuka, logika bisnis, dan basis data:
+
+* 
+**Frontend (Next.js):** Antarmuka interaktif bagi guru untuk mengelola kelas dan bagi siswa untuk mengerjakan esai. Dilengkapi fitur *prefetching link* untuk navigasi yang instan.
+
+
+* 
+**Backend (Golang):** Orkestrator utama yang menangani proses komputasi berat, integrasi **Gemini API**, dan manajemen data.
+
+
+* 
+**Vector Database (Elasticsearch):** Pusat pengetahuan sistem yang menyimpan *vector embeddings* dari materi pembelajaran untuk proses pencarian semantik (RAG).
+
+
+* **Cache Layer (Redis):** Menyimpan sementara hasil penilaian AI agar respon sistem lebih cepat dan hemat biaya API.
+* 
+**Relational Database (PostgreSQL/MySQL):** Menyimpan data terstruktur seperti profil pengguna, daftar kelas, dan rubrik penilaian.
+
+
+
+## 2. Alur Kerja Sistem (Workflow)
+
+Alur sistem dibagi menjadi dua fase utama untuk memastikan penilaian yang akurat:
+
+### A. Fase Persiapan (Indexing)
+
+1. 
+**Input Materi:** Guru mengunggah materi pembelajaran (PDF/Teks) ke sistem.
+
+
+2. **Embedding:** Backend (Go) memecah teks menjadi potongan kecil (*chunks*) dan mengubahnya menjadi *vector* melalui Gemini Embedding API.
+3. 
+**Storage:** Hasil *vector* disimpan ke dalam **Elasticsearch**.
+
+
+
+### B. Fase Penilaian (Inference)
+
+1. 
+**Submit Jawaban:** Siswa mengirimkan jawaban esai melalui **Next.js**.
+
+
+2. 
+**Retrieval:** Backend mencari potongan materi paling relevan di **Elasticsearch** berdasarkan jawaban siswa tersebut.
+
+
+3. 
+**Augmentation:** Jawaban siswa, materi referensi, dan **Rubrik C1-C4** digabungkan menjadi satu perintah (*prompt*) utuh.
+
+
+4. 
+**Generation:** **Gemini API** mengevaluasi jawaban berdasarkan rubrik dan memberikan skor serta *feedback* formatif.
+
+
+5. 
+**Caching:** Hasil penilaian disimpan di **Redis** sebelum ditampilkan ke dashboard.
+
+
+
+ flowchart:
+ Berdasarkan diagram alur yang Anda lampirkan, sistem ini dirancang dengan struktur Retrieval-Augmented Generation (RAG) yang membagi alur kerja menjadi dua jalur utama (Guru dan Siswa) sebelum akhirnya bertemu pada proses pengolahan AI.
+
+Berikut adalah penjelasan detail langkah-demi-langkah mengenai ke mana arah aliran data tersebut:
+1. Tahap Inisialisasi (Entry Point)
+
+    Start & User Login: Sistem dimulai ketika pengguna mengakses aplikasi dan melakukan login.
+
+    Check Role: Ini adalah gerbang logika utama. Sistem memeriksa kredensial pengguna di database untuk menentukan apakah mereka masuk ke dasbor Teacher (Guru) atau Student (Siswa).
+
+2. Jalur Guru: Persiapan Pengetahuan (Knowledge Base)
+
+Jika peran yang terdeteksi adalah Teacher, aliran datanya adalah:
+
+    Teacher Inputs Data: Guru memberikan input berupa soal esai, materi referensi (konteks), dan Rubrik Penilaian. Rubrik ini sangat krusial karena akan menjadi kompas bagi AI dalam memberikan nilai.
+
+    Save Data to DB: Data tersebut mengalir dan disimpan ke dalam Database System. Dalam konteks RAG, data materi dan rubrik ini nantinya akan diubah menjadi vector embeddings agar bisa dicari oleh sistem AI.
+
+3. Jalur Siswa: Pelaksanaan Ujian
+
+Jika peran yang terdeteksi adalah Student, aliran datanya adalah:
+
+    Questions Available?: Sistem melakukan kueri ke database.
+
+        No: Jika tidak ada soal aktif, alur dibelokkan ke pesan "Show No Active Questions" dan berakhir (End).
+
+        Yes: Jika tersedia, siswa masuk ke halaman Student Answers Essay.
+
+    Save Answer to DB: Jawaban yang diketik siswa dikirim dan disimpan ke dalam Database System. Penyimpanan ini memicu proses penilaian otomatis pada tahap berikutnya.
+
+4. Proses Inti RAG dan Penilaian AI
+
+Setelah jawaban siswa tersedia di database, sistem masuk ke proses backend yang kompleks:
+
+    RETRIEVAL PROCESS: Sistem melakukan pengambilan data secara cerdas. Ia menarik jawaban siswa yang baru saja disimpan, lalu mencari (retrieve) Jawaban Ideal, Rubrik, dan Kata Kunci yang relevan dari database.
+
+    AI Processing: Jawaban siswa dan data pendukung (rubrik & konteks) dimasukkan ke dalam model bahasa besar (seperti Gemini). AI membandingkan jawaban siswa dengan rubrik secara semantik (makna), bukan sekadar kecocokan kata kunci.
+
+    Generate Score & Feedback: AI menghasilkan output berupa skor numerik dan penjelasan (umpan balik) mengapa skor tersebut diberikan.
+
+5. Tahap Verifikasi dan Finalisasi
+
+    Teacher Review?: Hasil dari AI dikirim kembali ke dasbor guru untuk divalidasi.
+
+        Yes (Manual Adjustment): Jika guru merasa nilai dari AI kurang akurat, guru dapat mengubahnya secara manual. Jalur ini memastikan aspek manusia tetap memegang kendali penuh.
+
+        No: Jika guru setuju, nilai langsung diteruskan.
+
+    Finalize Score: Nilai akhir (baik dari AI atau hasil koreksi guru) disimpan secara permanen di database.
+
+    End: Proses selesai, dan nilai siap dilihat oleh siswa.

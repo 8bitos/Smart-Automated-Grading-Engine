@@ -1,0 +1,38 @@
+# Go
+/bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/vendor/
+/build/
+
+# Next.js
+.next/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env*.local
+.vercel/
+out/
+coverage/
+.turbo/
+
+# Docker
+.env
+*.log
+!docker-compose.yml
+
+# IDEs
+.idea/
+.vscode/
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
