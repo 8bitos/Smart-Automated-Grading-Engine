@@ -1,81 +1,72 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminRouteGuard from '@/components/AdminRouteGuard';
+import { useRouter } from 'next/navigation';
 
+// Define the Teacher type based on expected data
 interface Teacher {
-  id: string;
+  id: number;
   nama_lengkap: string;
   username: string;
   email: string;
 }
 
-export default function AdminTeachersPage() {
-  const { token, user, isLoading } = useAuth();
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [fetchError, setFetchError] = useState('');
-  const [isFetching, setIsFetching] = useState(true);
+export default function ManageTeachersPage() {
+  const { user, token } = useAuth();
+  const router = useRouter();
 
-  // State for Add Teacher Form
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [isFetching, setIsFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTeacherName, setNewTeacherName] = useState('');
   const [newTeacherUsername, setNewTeacherUsername] = useState('');
   const [newTeacherEmail, setNewTeacherEmail] = useState('');
   const [newTeacherPassword, setNewTeacherPassword] = useState('');
+  const [addFormError, setAddFormError] = useState<string | null>(null);
   const [addFormLoading, setAddFormLoading] = useState(false);
-  const [addFormError, setAddFormError] = useState('');
 
-  // Fungsi untuk mengambil daftar guru
+
+  // Fetch all teachers
   const fetchTeachers = async () => {
-    if (!token) {
-      setFetchError('Tidak ada token otentikasi.');
-      setIsFetching(false);
-      return;
-    }
-
     setIsFetching(true);
-    setFetchError('');
+    setFetchError(null);
     try {
-      const res = await fetch('http://localhost:8080/api/admin/teachers', {
-        method: 'GET',
+      const response = await fetch('http://localhost:8080/api/admin/teachers', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Gagal mengambil daftar guru.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
-      setTeachers(data);
-    } catch (err: any) {
-      setFetchError(err.message);
+
+      const data = await response.json();
+      setTeachers(data || []);
+    } catch (error: any) {
+      setFetchError(error.message);
     } finally {
       setIsFetching(false);
     }
   };
 
-  // Fungsi untuk menambah guru baru
+  // Handle adding a new teacher
   const handleAddTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAddFormError('');
     setAddFormLoading(true);
-
-    if (!token) {
-      setAddFormError('Tidak ada token otentikasi untuk menambah guru.');
-      setAddFormLoading(false);
-      return;
-    }
+    setAddFormError(null);
 
     try {
-      const res = await fetch('http://localhost:8080/api/admin/teachers', {
+       const response = await fetch('http://localhost:8080/api/admin/teachers', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           nama_lengkap: newTeacherName,
@@ -85,70 +76,63 @@ export default function AdminTeachersPage() {
         }),
       });
 
-      const data = await res.json();
+      const responseData = await response.json();
 
-      if (!res.ok) {
-        throw new Error(data.message || 'Gagal menambah guru.');
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Gagal menambahkan guru.');
       }
 
-      alert('Guru berhasil ditambahkan!');
+      // Reset form and refetch teachers
       setNewTeacherName('');
       setNewTeacherUsername('');
       setNewTeacherEmail('');
       setNewTeacherPassword('');
       setShowAddForm(false);
-      fetchTeachers(); // Refresh daftar guru
-    } catch (err: any) {
-      setAddFormError(err.message);
+      fetchTeachers(); // Refetch the list to show the new teacher
+    } catch (error: any) {
+      setAddFormError(error.message);
     } finally {
       setAddFormLoading(false);
     }
   };
 
-  // Fungsi untuk menghapus guru
-  const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
-    if (!token) {
-      alert('Tidak ada token otentikasi untuk menghapus guru.');
-      return;
-    }
-
-    if (!confirm(`Apakah Anda yakin ingin menghapus guru ${teacherName}?`)) {
+    // Handle deleting a teacher
+  const handleDeleteTeacher = async (teacherId: number, teacherName: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus guru "${teacherName}"?`)) {
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:8080/api/admin/teachers/${teacherId}`, {
+      const response = await fetch(`http://localhost:8080/api/admin/teachers/${teacherId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Gagal menghapus guru.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Gagal menghapus guru.');
       }
+      
+      // Filter out the deleted teacher from the state
+      setTeachers(teachers.filter(t => t.id !== teacherId));
 
-      alert('Guru berhasil dihapus!');
-      fetchTeachers(); // Refresh daftar guru
-    } catch (err: any) {
-      alert(`Error menghapus guru: ${err.message}`);
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
     }
   };
 
-
+  // Fetch teachers on component mount
   useEffect(() => {
-    if (!isLoading && user && user.peran === 'superadmin') {
+    if (token) {
       fetchTeachers();
     }
-  }, [isLoading, user, token]); 
+  }, [token]);
 
-  // Tampilan halaman admin
   return (
     <AdminRouteGuard>
-      <main className="min-h-screen p-8 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
-        <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
           <h1 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-white">Manajemen Guru</h1>
 
           {/* Tombol Tambah Guru */}
@@ -264,7 +248,6 @@ export default function AdminTeachersPage() {
             </div>
           )}
         </div>
-      </main>
     </AdminRouteGuard>
   );
 }

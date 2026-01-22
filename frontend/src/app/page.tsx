@@ -43,11 +43,21 @@ export default function Home() {
             {!isLoading && user ? ( // Jika user sudah login
               <>
                 <p className="text-lg">Halo, {user.peran}!</p>
-                {user.peran === 'superadmin' && ( // Tampilkan link Admin jika superadmin
-                  <Link href="/admin/teachers" className="rounded-md bg-purple-600 px-4 py-2 text-white hover:bg-purple-700">
-                    Admin Dashboard
+                
+                {/* Link untuk Guru & Superadmin */}
+                {(user.peran === 'teacher' || user.peran === 'superadmin') && (
+                  <Link href="/dashboard/teacher/classes" className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700">
+                    Manajemen Kelas
                   </Link>
                 )}
+
+                {/* Link khusus Superadmin */}
+                {user.peran === 'superadmin' && (
+                  <Link href="/admin/teachers" className="rounded-md bg-purple-600 px-4 py-2 text-white hover:bg-purple-700">
+                    Manajemen Guru
+                  </Link>
+                )}
+
                 <button
                   onClick={logout}
                   className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
